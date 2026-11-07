@@ -101,7 +101,7 @@ jobs:
           python-version: '3.12'
       - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval]'
       - run: python -m pytest --cov=remote_intent --cov-report=json --cov-report=xml
-      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
         with:
           name: coverage
           path: |
