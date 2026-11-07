@@ -2,8 +2,6 @@
 
 import asyncio
 import json
-from pathlib import Path
-from tempfile import TemporaryDirectory
 
 import pytest
 from hypothesis import given
@@ -15,6 +13,29 @@ from remote_intent.parser import parse_yaml
 from remote_intent.security import ExecutionPlan
 from tests.agent_sim.test_protocol import document, fixture
 from tests.security.test_mcp_penetration import assert_no_admission
+
+
+@pytest.fixture(scope="module")
+def wire_fixture(tmp_path_factory):
+    path = tmp_path_factory.mktemp("wire-fuzz") / "endpoint.sqlite"
+    _, controller, endpoint, calls = fixture(path, 93)
+    actions = controller.catalog("fixture-user", "fake-endpoint")["actions"]
+    plan = controller.compile("fixture-user", json.dumps(document(*actions)))
+    now = int(controller.clock())
+    signed = controller.signer.sign(
+        ExecutionPlan(
+            execution_id="execution",
+            nonce="nonce",
+            principal="fixture-user",
+            issued_at=now,
+            expires_at=now + 60,
+            policy_revision="fixture-v1",
+            resources=[],
+            plan=plan,
+        )
+    )
+    with asyncio.Runner() as runner:
+        yield runner, endpoint, calls, signed
 
 
 @given(st.text(max_size=2048))
@@ -33,13 +54,12 @@ def test_arbitrary_yaml_returns_canonical_data_or_public_rejection(source):
 
 
 @given(st.binary(max_size=2048))
-def test_arbitrary_wire_bytes_cannot_admit_execution(raw):
-    with TemporaryDirectory() as temp:
-        _, _, endpoint, calls = fixture(Path(temp) / "wire.sqlite", 92)
-        with pytest.raises(IntentError) as error:
-            asyncio.run(endpoint.deliver(raw))
-        assert error.value.code == "PLAN_SIGNATURE_INVALID"
-        assert_no_admission(endpoint, calls)
+def test_arbitrary_wire_bytes_cannot_admit_execution(wire_fixture, raw):
+    runner, endpoint, calls, _ = wire_fixture
+    with pytest.raises(IntentError) as error:
+        runner.run(endpoint.deliver(raw))
+    assert error.value.code == "PLAN_SIGNATURE_INVALID"
+    assert_no_admission(endpoint, calls)
 
 
 @given(
@@ -48,30 +68,14 @@ def test_arbitrary_wire_bytes_cannot_admit_execution(raw):
     ),
     st.from_regex(r"[a-z][a-z0-9]{0,24}", fullmatch=True),
 )
-def test_modified_signed_claim_never_admits_execution(claim, value):
-    with TemporaryDirectory() as temp:
-        _, controller, endpoint, calls = fixture(Path(temp) / "signature.sqlite", 93)
-        actions = controller.catalog("fixture-user", "fake-endpoint")["actions"]
-        plan = controller.compile("fixture-user", json.dumps(document(*actions)))
-        now = int(controller.clock())
-        signed = controller.signer.sign(
-            ExecutionPlan(
-                execution_id="execution",
-                nonce="nonce",
-                principal="fixture-user",
-                issued_at=now,
-                expires_at=now + 60,
-                policy_revision="fixture-v1",
-                resources=[],
-                plan=plan,
-            )
-        )
-        envelope = json.loads(signed)
-        envelope["payload"][claim] = value + "-altered"
-        with pytest.raises(IntentError) as error:
-            asyncio.run(endpoint.deliver(canonical(envelope)))
-        assert error.value.code == "PLAN_SIGNATURE_INVALID"
-        assert_no_admission(endpoint, calls)
+def test_modified_signed_claim_never_admits_execution(wire_fixture, claim, value):
+    runner, endpoint, calls, signed = wire_fixture
+    envelope = json.loads(signed)
+    envelope["payload"][claim] = value + "-altered"
+    with pytest.raises(IntentError) as error:
+        runner.run(endpoint.deliver(canonical(envelope)))
+    assert error.value.code == "PLAN_SIGNATURE_INVALID"
+    assert_no_admission(endpoint, calls)
 
 
 @given(st.integers(min_value=0x110000, max_value=0xFFFFFFFF))
