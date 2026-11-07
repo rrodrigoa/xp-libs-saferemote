@@ -10,7 +10,7 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = ["pydantic>=2.12,<3", "PyYAML>=6.0.3,<7", "cryptography>=46,<51", "jsonschema>=4.26,<5"]
+dependencies = ["pydantic>=2.12,<3", "PyYAML>=6.0.3,<7", "cryptography>=46,<51", "jsonschema>=4.26,<5", "referencing>=0.37,<1"]
 
 [project.optional-dependencies]
 mcp = ["fastmcp>=4.1.6,<5"]

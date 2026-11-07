@@ -6,6 +6,8 @@ from typing import Any
 
 from jsonschema import Draft202012Validator
 from pydantic import ValidationError
+from referencing import Registry
+from referencing.exceptions import Unresolvable
 
 from .actions import ActionRegistry, ActionSpec, Effect
 from .contracts import Contract, Workflow, canonical, digest
@@ -94,8 +96,13 @@ def _has_ref(value: Any) -> bool:
 def _literal(
     value: Any, schema: dict[str, Any], root: dict[str, Any], path: str, action: str
 ) -> None:
-    validator = Draft202012Validator({**schema, "$defs": root.get("$defs", {})})
-    error = next(validator.iter_errors(value), None)
+    validator = Draft202012Validator(
+        {**schema, "$defs": root.get("$defs", {})}, registry=Registry()
+    )
+    try:
+        error = next(validator.iter_errors(value), None)
+    except Unresolvable:
+        raise IntentError("ACTION_SCHEMA_MISMATCH", path=path) from None
     if error is not None:
         location = error_path(path, error.absolute_path)
         if error.validator == "required" and isinstance(error.instance, dict):

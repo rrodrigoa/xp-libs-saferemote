@@ -1,6 +1,10 @@
 import os
 from pathlib import Path
 
+from hypothesis import settings
+
+settings.register_profile("security-fuzz", max_examples=1000)
+
 
 def pytest_addoption(parser):
     parser.addoption("--live-llm", action="store_true", default=False)
