@@ -1,0 +1,20 @@
+apiVersion: remote.intent/v1
+kind: Workflow
+metadata:
+  name: summarize-example
+spec:
+  target:
+    device_id: fake-endpoint
+  steps:
+    - id: collect
+      uses: acme.logs.collect@1
+      with:
+        channel: System
+        lookback_minutes: 10
+    - id: summary
+      uses: acme.logs.summarize@1
+      with:
+        logs: {ref: steps.collect.outputs.logs}
+        group_by: [source]
+  outputs:
+    summary: {ref: steps.summary.outputs.summary}

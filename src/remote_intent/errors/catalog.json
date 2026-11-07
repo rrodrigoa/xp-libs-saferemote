@@ -1,0 +1,474 @@
+{
+  "ACTION_IMPLEMENTATION_UNAVAILABLE": {
+    "category": "execution",
+    "example": "Request installation by a trusted pack publisher.",
+    "message": "The exact approved action implementation is unavailable on the endpoint.",
+    "remediation": "Ask the operator to install an approved compatible action pack; do not supply executable code in YAML.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_INPUT_INVALID": {
+    "category": "validation",
+    "example": "spec.steps[1].with.lookback_minutes: 30",
+    "message": "Action {action} has invalid input at {path}: {reason}.",
+    "remediation": "Call describe_action and change only the indicated with field to match input_schema, including required fields, exact types and enum values.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_KEY_COLLISION": {
+    "category": "configuration",
+    "example": "Registry owner resolves duplicate key.",
+    "message": "Multiple installed implementations claim the same action and version.",
+    "remediation": "Publisher must correct the registry; do not select an implementation from the agent.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_NOT_VISIBLE": {
+    "category": "authorization",
+    "example": "Use list_actions with the authenticated session.",
+    "message": "The requested action is not available to this caller.",
+    "remediation": "Do not retry with another identity; request authorized access through the owning service.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_OUTPUT_INVALID": {
+    "category": "execution",
+    "example": "Check declared output_schema and correlated execution ID.",
+    "message": "Action {action} returned output that does not match its declared output_schema.",
+    "remediation": "Do not invent an output field; report the action implementation defect to its publisher.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_PACK_UNTRUSTED": {
+    "category": "security",
+    "example": "Contact action pack owner with correlation_id.",
+    "message": "The action pack signature or publisher trust verification failed.",
+    "remediation": "Stop; have the trusted operator verify installation and signing configuration.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_SCHEMA_MISMATCH": {
+    "category": "integrity",
+    "example": "Call describe_action and compile a new plan.",
+    "message": "The action schema or implementation digest differs from the compiled plan.",
+    "remediation": "Stop this plan, refresh catalog and revalidate/reapprove before any resubmission.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_TARGET_UNSUPPORTED": {
+    "category": "validation",
+    "example": "Call list_actions for the exact target.",
+    "message": "Action {action} is not supported on the selected target.",
+    "remediation": "Select a target-compatible action from list_actions or stop.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_UNKNOWN": {
+    "category": "validation",
+    "example": "uses: example.inspect@1",
+    "message": "Action {action} is not installed or visible for this target.",
+    "remediation": "Call list_actions for this target and replace uses with an exact returned key; do not invent an implementation.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ACTION_VERSION_UNAVAILABLE": {
+    "category": "validation",
+    "example": "uses: example.inspect@1",
+    "message": "Action {action} has no compatible installed version for requested major {version}.",
+    "remediation": "Inspect list_actions/describe_action and use a currently advertised compatible major.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "APPROVAL_INVALID": {
+    "category": "authorization",
+    "example": "Preview and request approval for the compiled plan.",
+    "message": "The supplied approval is invalid, expired, or bound to another plan or target.",
+    "remediation": "Request a new approval for the exact current plan; do not alter parameters under an old approval.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "APPROVAL_REQUIRED": {
+    "category": "authorization",
+    "example": "Wait for trusted approval provider status.",
+    "message": "This plan requires external approval before any restricted action can run.",
+    "remediation": "Report pending approval and use the approved workflow; do not fabricate approval tokens.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "APPROVAL_REVOKED": {
+    "category": "authorization",
+    "example": "Contact approving authority if action remains needed.",
+    "message": "Authorization for this plan was revoked.",
+    "remediation": "Stop; do not resubmit automatically or try another target.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ARTIFACT_DIGEST_MISMATCH": {
+    "category": "security",
+    "example": "Re-deliver the exact approved artifact.",
+    "message": "The artifact digest does not match the signed plan.",
+    "remediation": "Reject artifact and notify the operator; never fall back to unsigned bytes.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ARTIFACT_EXPIRED": {
+    "category": "resource",
+    "example": "Request result from the authorized execution.",
+    "message": "The referenced artifact is expired or no longer accessible.",
+    "remediation": "Re-run only an authorized safe producer or request a fresh scoped handle.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ARTIFACT_NOT_APPROVED": {
+    "category": "authorization",
+    "example": "Use a preapproved artifact ID.",
+    "message": "The requested artifact is not approved for this operation.",
+    "remediation": "Request trusted publisher onboarding; do not provide an arbitrary download address or executable blob.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ARTIFACT_SCOPE_DENIED": {
+    "category": "authorization",
+    "example": "Obtain a scoped result through get_execution_results.",
+    "message": "The artifact is not authorized for this workflow or principal.",
+    "remediation": "Use an authorized artifact reference; do not copy or fabricate handles.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "CATALOG_STALE": {
+    "category": "validation",
+    "example": "Refresh catalog for the selected target.",
+    "message": "The action catalog changed since discovery.",
+    "remediation": "Call list_actions and describe_action again; regenerate and validate the workflow.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "CATALOG_UNAVAILABLE": {
+    "category": "availability",
+    "example": "Call list_actions again after service is healthy.",
+    "message": "The current trusted action catalog could not be obtained.",
+    "remediation": "Retry discovery after service recovery; do not guess action inputs or execute with cached stale schemas.",
+    "retryable": true,
+    "severity": "error"
+  },
+  "CONDITION_INVALID": {
+    "category": "validation",
+    "example": "when:\n  ref: steps.inspect.outputs.ready\n  equals: true",
+    "message": "The condition at {path} is invalid or has incompatible operands.",
+    "remediation": "Use only documented typed comparison operators and published producer fields.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "CONDITION_SOURCE_SKIPPED": {
+    "category": "validation",
+    "example": "Guard consumer with the producer success condition.",
+    "message": "A required condition/input depends on a step that may be skipped.",
+    "remediation": "Add an explicit guard or optional fallback consistent with the workflow schema.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "DAG_CYCLE": {
+    "category": "validation",
+    "example": "collect -> summarize",
+    "message": "Workflow dependencies contain a cycle involving {step}.",
+    "remediation": "Remove the cyclic dependency or reference so every step depends only on prior producers.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "DAG_LIMIT_EXCEEDED": {
+    "category": "resource",
+    "example": "Split independent investigations into separate authorized workflows.",
+    "message": "Workflow graph exceeds allowed step/dependency/concurrency limits.",
+    "remediation": "Reduce step count, depth or parallelism within published limits.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "ERROR_CODE_UNKNOWN": {
+    "category": "validation",
+    "example": "get_error_info(code=\"ACTION_INPUT_INVALID\")",
+    "message": "Unknown error catalog code {code}.",
+    "remediation": "Use the stable code returned by the MCP error envelope; inspect documented error codes.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "EVAL_CONFIGURATION_MISSING": {
+    "category": "evaluation",
+    "example": "See docs/LOCAL_LLM_RUNBOOK.md.",
+    "message": "A required local evaluation setting is missing.",
+    "remediation": "Provide runtime environment variables and both explicit live-test opt-ins; never commit values.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "EVAL_MODEL_INCOMPATIBLE": {
+    "category": "evaluation",
+    "example": "Run local model preflight.",
+    "message": "The configured model endpoint cannot complete the required evaluator protocol.",
+    "remediation": "Verify an OpenAI-compatible chat-completions implementation and structured tool-calling support.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "EVAL_TURN_LIMIT": {
+    "category": "evaluation",
+    "example": "Compare failed scenario against fixture oracle.",
+    "message": "The model evaluation exceeded its bounded turn or correction limit.",
+    "remediation": "Inspect sanitized transcript and reduce ambiguity or improve the skill; do not lift safety limits implicitly.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "INTERNAL_ERROR": {
+    "category": "internal",
+    "example": "Provide correlation_id in a support report.",
+    "message": "An unexpected internal error occurred; execution details are withheld.",
+    "remediation": "Report correlation_id to the service operator; avoid repeated submissions of mutating workflows.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "MCP_RESULT_LIMIT": {
+    "category": "resource",
+    "example": "get_execution_results with page_size within published limit.",
+    "message": "The MCP result exceeds the permitted response size.",
+    "remediation": "Use bounded pagination or authorized result handles.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "MCP_SESSION_UNAUTHENTICATED": {
+    "category": "authorization",
+    "example": "Authenticate through the MCP host/service.",
+    "message": "The MCP session does not have an authenticated principal.",
+    "remediation": "Use the host-supported authentication flow; do not supply principal data inside workflow YAML.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "MCP_TOOL_ARGUMENT_INVALID": {
+    "category": "validation",
+    "example": "list_actions(target_id=<authorized-target>)",
+    "message": "MCP tool {tool} received invalid arguments at {path}.",
+    "remediation": "Read this MCP tool input_schema and resubmit only declared required fields with correct types.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "MCP_TOOL_UNAVAILABLE": {
+    "category": "availability",
+    "example": "Read the server tools list.",
+    "message": "The selected MCP operation is not available.",
+    "remediation": "List advertised MCP tools/resources and use only supported operations.",
+    "retryable": true,
+    "severity": "error"
+  },
+  "MODEL_TOOL_CALLING_UNSUPPORTED": {
+    "category": "evaluation",
+    "example": "Run local model preflight.",
+    "message": "The model response did not contain a valid structured tool call.",
+    "remediation": "Configure a server/model with JSON tool-call support; text pretending to call tools is insufficient.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "OUTPUT_REDACTED": {
+    "category": "privacy",
+    "example": "Use visible result summary.",
+    "message": "Some output fields were redacted under result access policy.",
+    "remediation": "Report only available authorized evidence; do not infer missing values or seek alternate outputs.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "OUTPUT_VALIDATION_FAILED": {
+    "category": "execution",
+    "example": "Provide action key and correlation_id.",
+    "message": "The action output could not be serialized within its declared contract.",
+    "remediation": "Report implementation defect to action publisher; do not invent replacement data.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "PLAN_EXPIRED": {
+    "category": "authorization",
+    "example": "Preview a new workflow submission.",
+    "message": "The execution plan is outside its approved validity window.",
+    "remediation": "Create a new validated/authorized plan rather than replaying the expired plan.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "PLAN_REPLAY_CONFLICT": {
+    "category": "security",
+    "example": "get_execution_status for existing execution_id.",
+    "message": "Execution ID or nonce has already been used with a conflicting plan.",
+    "remediation": "Stop; inspect existing execution status and report the replay conflict.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "PLAN_SIGNATURE_INVALID": {
+    "category": "security",
+    "example": "Report correlation_id and integrity failure.",
+    "message": "Execution plan signature validation failed.",
+    "remediation": "Stop execution and contact the endpoint administrator; never regenerate a signature in agent YAML.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "POLICY_STALE": {
+    "category": "authorization",
+    "example": "Refresh policy and preview a new plan.",
+    "message": "The endpoint policy revision does not authorize this plan.",
+    "remediation": "Stop and compile/reapprove against current policy after operator review.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "POLICY_UNAVAILABLE": {
+    "category": "authorization",
+    "example": "Retry preview after policy service recovery.",
+    "message": "The policy evaluation service is unavailable; execution is denied.",
+    "remediation": "Wait for policy service recovery; do not bypass authorization or simulate approval.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "RECONCILIATION_REQUIRED": {
+    "category": "execution",
+    "example": "Report execution_id and uncertain action.",
+    "message": "The effect of action {action} is uncertain after interruption.",
+    "remediation": "Stop automated retries; use its registered reconciler or obtain operator confirmation.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "REFERENCE_SCOPE_DENIED": {
+    "category": "authorization",
+    "example": "ref: steps.collect.outputs.result",
+    "message": "The referenced value is outside this workflow or authorization scope.",
+    "remediation": "Use only outputs from permitted steps in the current workflow; do not fabricate handles.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "REFERENCE_UNAVAILABLE": {
+    "category": "validation",
+    "example": "ref: steps.collect.outputs.result",
+    "message": "Output reference {reference} does not exist or cannot be used here.",
+    "remediation": "Check producer step ID, its output_schema, dependency order and conditional skip rules.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "RESOURCE_QUOTA_EXCEEDED": {
+    "category": "resource",
+    "example": "Use a lower max_records or fewer steps if supported by registered schema.",
+    "message": "Resource budget exceeded for {resource}.",
+    "remediation": "Reduce workflow scale or request an operator policy change; do not override limits in YAML.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "SECURITY_DENIED": {
+    "category": "authorization",
+    "example": "Request access through approved operational process.",
+    "message": "Execution is denied by policy.",
+    "remediation": "Stop and explain that access or effect is not authorized; do not search for an alternate command path.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "SKILL_RESOURCE_UNAVAILABLE": {
+    "category": "availability",
+    "example": "Read rir://skills/remote-intent/v1",
+    "message": "The agent skill resource for this API version cannot be retrieved.",
+    "remediation": "Fetch a supported versioned skill resource; stop if the service lacks instructions.",
+    "retryable": true,
+    "severity": "error"
+  },
+  "STEP_CANCELLED": {
+    "category": "execution",
+    "example": "get_execution_status(execution_id)",
+    "message": "Execution was cancelled; some in-progress actions may require reconciliation.",
+    "remediation": "Check final step statuses; do not assume a mutation was rolled back.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "STEP_EXECUTION_FAILED": {
+    "category": "execution",
+    "example": "Provide correlation_id to action publisher.",
+    "message": "The registered action failed without a permitted detailed public reason.",
+    "remediation": "Inspect safe status, correlate with publisher logs, and retry only if declared safe.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "STEP_TIMEOUT": {
+    "category": "execution",
+    "example": "get_execution_status(execution_id)",
+    "message": "Action {action} exceeded its authorized execution deadline.",
+    "remediation": "Inspect status and side-effect uncertainty before deciding to retry; never blindly repeat mutation.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "TARGET_MISMATCH": {
+    "category": "security",
+    "example": "Choose the target returned by the trusted inventory.",
+    "message": "Signed plan target does not match receiving endpoint identity.",
+    "remediation": "Stop and obtain a newly authorized plan for the correct endpoint.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "TRUST_STORE_MISMATCH": {
+    "category": "security",
+    "example": "Contact endpoint trust administrator.",
+    "message": "The signing identity is not trusted by this endpoint.",
+    "remediation": "Stop; operator must repair trusted signing configuration.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "TYPE_MISMATCH": {
+    "category": "validation",
+    "example": "with:\n  target_count: 1",
+    "message": "The value at {path} is incompatible with required type {expected}.",
+    "remediation": "Use the target action input_schema and producer output_schema to select a compatible value/reference.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "WORKFLOW_SCHEMA_INVALID": {
+    "category": "validation",
+    "example": "spec.steps[0].uses: example.inspect@1",
+    "message": "The workflow YAML does not match remote.intent/v1 at {path}.",
+    "remediation": "Use the documented workflow grammar; correct the field at the reported path and validate again.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "WORKFLOW_TARGET_INVALID": {
+    "category": "validation",
+    "example": "spec.target.device_id: <authorized-device-id>",
+    "message": "The workflow target is missing or not a valid authorized target.",
+    "remediation": "Select a target supplied by the trusted hosting service; do not guess device identifiers.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "WORKFLOW_TIMEOUT_INVALID": {
+    "category": "validation",
+    "example": "spec.limits.timeout_seconds: 120",
+    "message": "The workflow timeout at {path} is outside configured limits.",
+    "remediation": "Choose a timeout within the published limit for this target and action set.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "WORKFLOW_VERSION_UNSUPPORTED": {
+    "category": "validation",
+    "example": "apiVersion: remote.intent/v1",
+    "message": "The workflow API version {version} is unsupported.",
+    "remediation": "Read current service capabilities and use a supported apiVersion.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "YAML_PARSE_FAILED": {
+    "category": "validation",
+    "example": "spec:\n  steps: []",
+    "message": "The YAML could not be parsed at {path}.",
+    "remediation": "Fix YAML indentation and scalar syntax; submit a single mapping document.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "YAML_RESOURCE_LIMIT": {
+    "category": "resource",
+    "example": "Use fewer steps in one workflow.",
+    "message": "The YAML document exceeds a parsing limit at {path}.",
+    "remediation": "Reduce document size, nesting, or collection length within published limits.",
+    "retryable": false,
+    "severity": "error"
+  },
+  "YAML_UNSAFE_CONSTRUCT": {
+    "category": "security",
+    "example": "with:\n  count: 2",
+    "message": "The workflow includes a prohibited YAML construct at {path}.",
+    "remediation": "Remove custom tags, aliases, anchors, merge keys or duplicate keys; use ordinary YAML values.",
+    "retryable": false,
+    "severity": "error"
+  }
+}

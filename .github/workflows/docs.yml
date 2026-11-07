@@ -1,0 +1,23 @@
+name: Docs
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+jobs:
+  docs-skill:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval]'
+      - run: python scripts/generate_contracts.py --check
+      - run: python -m examples.demo
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python scripts/verify_dist.py

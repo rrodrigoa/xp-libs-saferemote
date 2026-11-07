@@ -1,0 +1,54 @@
+[build-system]
+requires = ["hatchling==1.33.0"]
+build-backend = "hatchling.build"
+
+[project]
+name = "xp-libs-saferemote"
+version = "0.1.0"
+description = "Compile and authorize declarative workflows of registered Python actions"
+readme = "README.md"
+requires-python = ">=3.11"
+license = "MIT"
+license-files = ["LICENSE"]
+dependencies = ["pydantic>=2.12,<3", "PyYAML>=6.0.3,<7", "cryptography>=46,<51", "jsonschema>=4.26,<5"]
+
+[project.optional-dependencies]
+mcp = ["fastmcp>=4.1.6,<5"]
+llm-eval = ["xp-libs-saferemote[mcp]", "openai>=2,<4"]
+dev = ["build", "hatchling", "twine", "ruff", "mypy", "types-PyYAML", "types-jsonschema", "pytest", "pytest-cov", "hypothesis", "bandit", "pip-audit"]
+
+[project.urls]
+Repository = "https://github.com/rrodrigoa/xp-libs-saferemote"
+
+[tool.hatch.build.targets.wheel]
+packages = ["src/remote_intent", "src/remote_intent_evals"]
+
+[tool.hatch.build.targets.wheel.force-include]
+"skills/remote-intent/SKILL.md" = "remote_intent/SKILL.md"
+
+[tool.hatch.build.targets.sdist]
+include = [
+    "/src", "/skills", "/tests", "/scripts", "/config", "/evals",
+    "/examples/__init__.py", "/examples/demo.py", "/examples/sample_actions.py",
+    "/examples/summarize.yaml", "/examples/forbidden_workflow.yaml",
+    "/docs/generated", "/docs/adr", "/docs/SDK.md", "/docs/GITHUB_SETUP.md",
+    "/docs/LOCAL_LLM_RUNBOOK.md",
+    "/README.md", "/SECURITY.md", "/CHANGELOG.md", "/CONTRIBUTING.md",
+    "/requirements-lock.txt", "/LICENSE", "/pyproject.toml",
+]
+
+[tool.ruff.lint]
+select = ["E4", "E7", "E9", "F", "I", "B", "UP"]
+
+[tool.mypy]
+strict = true
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+addopts = "--strict-markers"
+markers = ["live_llm: operator-configured local model evaluation"]
+
+[tool.coverage.run]
+branch = true
+relative_files = true
+source = ["remote_intent"]
