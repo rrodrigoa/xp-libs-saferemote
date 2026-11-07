@@ -1,0 +1,15 @@
+# NEGATIVE fixture: unregistered action, and an agent-defined command argument.
+# Reject before invocation. If a trusted publisher registers its own restricted
+# action in the future, authorization and schema must still be checked.
+apiVersion: remote.intent/v1
+kind: Workflow
+metadata:
+  name: unacceptable-unregistered-action
+spec:
+  target:
+    device_id: workstation-042
+  steps:
+    - id: arbitrary_command
+      uses: shell.run@1
+      with:
+        command: whoami

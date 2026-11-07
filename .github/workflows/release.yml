@@ -1,0 +1,113 @@
+name: Release
+on:
+  push:
+    tags: ['v*']
+permissions:
+  contents: read
+jobs:
+  build:
+    if: github.ref_protected && vars.RIR_RELEASE_ENABLED == 'true'
+    permissions:
+      contents: read
+      checks: read
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - run: git merge-base --is-ancestor HEAD origin/main
+      - run: python scripts/check_release_safety.py
+      - run: python scripts/check_required_checks.py
+        env:
+          GH_TOKEN: ${{ github.token }}
+      - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval]'
+      - run: ruff check . && ruff format --check . && mypy src examples
+      - run: python -m pytest --cov=remote_intent --cov-report=json --cov-report=xml
+      - run: python scripts/check_critical_coverage.py coverage.json
+      - run: python scripts/generate_contracts.py --check
+      - run: python -m pip_audit --no-deps --disable-pip -r requirements-lock.txt --format cyclonedx-json -o sbom.json && bandit -r src
+      - run: python -m build
+      - run: python -m twine check dist/*
+      - run: python scripts/verify_dist.py
+      - run: sha256sum dist/* > SHA256SUMS
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: release-distributions
+          path: |
+            dist/*
+            SHA256SUMS
+            sbom.json
+            scripts/verify_index.py
+            scripts/smoke.py
+  testpypi:
+    needs: build
+    runs-on: ubuntu-latest
+    environment: testpypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-distributions
+      - run: sha256sum -c SHA256SUMS
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086
+        with:
+          attestations: true
+          repository-url: https://test.pypi.org/legacy/
+  verify-testpypi:
+    needs: testpypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-distributions
+      - run: sha256sum -c SHA256SUMS
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - run: python scripts/verify_index.py testpypi
+  pypi:
+    needs: verify-testpypi
+    runs-on: ubuntu-latest
+    environment: pypi
+    permissions:
+      contents: read
+      id-token: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-distributions
+      - run: sha256sum -c SHA256SUMS
+      - uses: pypa/gh-action-pypi-publish@7245906fb61fa33a13554f9d5fb856fe61758086
+        with:
+          attestations: true
+  verify-pypi:
+    needs: pypi
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-distributions
+      - run: sha256sum -c SHA256SUMS
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - run: python scripts/verify_index.py pypi
+  github-release:
+    needs: verify-pypi
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/download-artifact@d3f86a106a0bac45b974a628896c90dbdf5c8093
+        with:
+          name: release-distributions
+      - run: sha256sum -c SHA256SUMS
+      - run: gh release create "$GITHUB_REF_NAME" --repo "$GITHUB_REPOSITORY" --verify-tag --generate-notes dist/* SHA256SUMS sbom.json
+        env:
+          GH_TOKEN: ${{ github.token }}

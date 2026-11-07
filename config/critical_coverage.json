@@ -1,0 +1,11 @@
+[
+  "src/remote_intent/actions.py",
+  "src/remote_intent/catalog.py",
+  "src/remote_intent/compiler.py",
+  "src/remote_intent/controller.py",
+  "src/remote_intent/journal.py",
+  "src/remote_intent/parser.py",
+  "src/remote_intent/policy.py",
+  "src/remote_intent/runtime.py",
+  "src/remote_intent/security.py"
+]
