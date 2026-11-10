@@ -47,7 +47,9 @@ docker compose -f tests/e2e/docker-compose.yml --profile e2e down -v --remove-or
 ```
 
 Use a fresh Compose stack for each run. See the [Docker runbook](docs/DOCKER_E2E_EXTERNAL_EXPORT.md)
-and the [export effect decision](docs/adr/0002-data-export.md).
+and the [export effect decision](docs/adr/0002-data-export.md). The
+[end-to-end security walkthrough](docs/END_TO_END_SECURITY_WALKTHROUGH.md)
+includes the workflow YAML, trust boundaries, and deployment responsibilities.
 
 ## Run the example
 
