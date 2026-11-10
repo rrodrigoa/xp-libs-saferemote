@@ -149,9 +149,7 @@ transport = StreamableHttpTransport(
     verify=tls_context,
 )
 async with Client(transport) as agent:
-    listing = await agent.call_tool(
-        "list_actions", {"target_id": "e2e-endpoint-01"}
-    )
+    listing = await agent.call_tool("list_actions", {"target_id": "e2e-endpoint-01"})
     # Check status and inspect each selected action before composing YAML.
     epoch = listing.structured_content["data"]["catalog_epoch"]
 ```
