@@ -25,7 +25,7 @@ from .common import CA_FILE, PRINCIPALS, SECRETS, TARGET
 from .pack_contract import run_pack_contract
 
 MCP_URL = "https://control-plane:8443/mcp"
-EXPECTED_DIGEST = "3f393c26a11376e0adbf61f06a12c100300bf2dd43c597679c95d06a6ee57db8"
+EXPECTED_DIGEST = "5ab816b2fb820428ed20054088819bb6f2fe7de2d930c8ed27291acb2589dea1"
 
 
 def client(principal=None, **headers):
