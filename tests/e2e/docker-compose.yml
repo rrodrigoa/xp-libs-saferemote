@@ -1,0 +1,116 @@
+name: saferemote-e2e
+
+x-app: &app
+  image: saferemote-e2e-services
+  pull_policy: never
+  read_only: true
+  tmpfs: [/tmp]
+  cap_drop: [ALL]
+  security_opt: [no-new-privileges:true]
+  mem_limit: 512m
+
+services:
+  bootstrap:
+    <<: *app
+    build:
+      context: ../..
+      dockerfile: tests/e2e/Dockerfile
+      target: services
+    user: "0:0"
+    cap_add: [CHOWN]
+    command: [python, -m, tests.e2e.bootstrap]
+    network_mode: none
+    volumes:
+      - control-secrets:/control-plane
+      - endpoint-secrets:/endpoint
+      - storage-secrets:/azurite
+      - runner-secrets:/runner
+      - journal:/journal
+      - reports:/reports
+    healthcheck:
+      test: [CMD, test, -f, /tmp/ready]
+      interval: 2s
+      timeout: 2s
+      retries: 15
+
+  azurite:
+    image: mcr.microsoft.com/azure-storage/azurite@sha256:830430c1da1a2d537e08f3e6764dd1f5ae00cf0346bcaf625b968ec3f0971fd5
+    user: "10001:10001"
+    read_only: true
+    tmpfs: [/tmp]
+    cap_drop: [ALL]
+    security_opt: [no-new-privileges:true]
+    mem_limit: 512m
+    depends_on:
+      bootstrap: {condition: service_healthy}
+    entrypoint: [sh, -ec]
+    command:
+      - |
+        export AZURITE_ACCOUNTS="saferemotefixture:$$(cat /secrets/storage.key)"
+        exec azurite-blob --blobHost 0.0.0.0 --blobPort 10000 --location /tmp --cert /secrets/tls.pem --key /secrets/tls.key --disableProductStyleUrl --silent --disableTelemetry
+    volumes:
+      - storage-secrets:/secrets:ro
+    networks: [blob]
+    healthcheck:
+      test: [CMD, node, -e, "const s=require('net').connect(10000,'127.0.0.1',()=>s.end());s.on('error',()=>process.exit(1))"]
+      interval: 2s
+      timeout: 2s
+      retries: 20
+
+  control-plane:
+    <<: *app
+    command: [coverage, run, --rcfile=/app/coverage.ini, -m, tests.e2e.control_plane]
+    depends_on:
+      bootstrap: {condition: service_healthy}
+      azurite: {condition: service_healthy}
+    volumes:
+      - control-secrets:/secrets:ro
+      - reports:/reports
+    networks: [agent_control, delivery, blob]
+    healthcheck: &python-health
+      test: [CMD, python, -c, "import socket; socket.create_connection(('127.0.0.1', 8443), 1).close()"]
+      interval: 2s
+      timeout: 2s
+      retries: 40
+
+  endpoint:
+    <<: *app
+    image: saferemote-e2e-endpoint
+    build:
+      context: ../..
+      dockerfile: tests/e2e/Dockerfile
+      target: endpoint
+    command: [coverage, run, --rcfile=/app/coverage.ini, -m, tests.e2e.endpoint]
+    depends_on:
+      bootstrap: {condition: service_healthy}
+    volumes:
+      - endpoint-secrets:/secrets:ro
+      - journal:/journal
+      - reports:/reports
+    networks: [delivery, blob]
+    healthcheck: *python-health
+
+  e2e-runner:
+    <<: *app
+    profiles: [e2e]
+    command: [coverage, run, --rcfile=/app/coverage.ini, -m, tests.e2e.agent_runner]
+    depends_on:
+      endpoint: {condition: service_healthy}
+      control-plane: {condition: service_healthy}
+      azurite: {condition: service_healthy}
+    volumes:
+      - runner-secrets:/secrets:ro
+      - reports:/reports
+    networks: [agent_control, blob]
+
+networks:
+  agent_control: {internal: true}
+  delivery: {internal: true}
+  blob: {internal: true}
+volumes:
+  control-secrets:
+  endpoint-secrets:
+  storage-secrets:
+  runner-secrets:
+  journal:
+  reports:

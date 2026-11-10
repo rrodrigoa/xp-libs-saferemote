@@ -24,7 +24,7 @@ jobs:
       - run: python scripts/check_required_checks.py
         env:
           GH_TOKEN: ${{ github.token }}
-      - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval]'
+      - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval,e2e]'
       - run: ruff check . && ruff format --check . && mypy src examples
       - run: python -m pytest --cov=remote_intent --cov-report=json --cov-report=xml
       - run: python scripts/check_critical_coverage.py coverage.json

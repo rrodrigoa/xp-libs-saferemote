@@ -111,6 +111,7 @@ class EndpointRuntime:
         result_projection: Callable[[str, dict[str, Any]], dict[str, Any]]
         | None = None,
         clock: Callable[[], float] = time.time,
+        allow_data_export: bool = False,
     ) -> None:
         self.target_id = target_id
         self.compiler = compiler
@@ -121,6 +122,7 @@ class EndpointRuntime:
         self.worker = worker if worker is not None else InProcessReadOnlyWorker()
         self.result_projection = result_projection
         self.clock = clock
+        self.allow_data_export = allow_data_export
         self._slots = asyncio.Semaphore(8)
         self._active: dict[str, dict[str, Event]] = {}
 
@@ -170,8 +172,11 @@ class EndpointRuntime:
         if local.fingerprint != plan.fingerprint:
             raise IntentError("ACTION_SCHEMA_MISMATCH")
         self._authorize(payload)
+        allowed = {Effect.OBSERVE}
+        if self.allow_data_export:
+            allowed.add(Effect.DATA_EXPORT)
         if any(
-            spec.privilege is not None or spec.effect != Effect.OBSERVE
+            spec.privilege is not None or spec.effect not in allowed
             for spec in local.actions.values()
         ):
             raise IntentError("SECURITY_DENIED")
@@ -199,6 +204,7 @@ class EndpointRuntime:
             dependencies = plan.dependencies[step_id]
             await asyncio.gather(*(tasks[key] for key in dependencies))
             state, code = "skipped", None
+            export_started = False
             try:
                 if self.journal.cancelled(execution):
                     raise IntentError("STEP_CANCELLED")
@@ -242,6 +248,7 @@ class EndpointRuntime:
                         cancellation,
                         artifacts=artifacts,
                     )
+                    export_started = spec.effect == Effect.DATA_EXPORT
                     result = await self.worker.invoke(
                         registered, context, arguments, timeout
                     )
@@ -267,11 +274,21 @@ class EndpointRuntime:
             except IntentError as exc:
                 state = "canceled" if exc.code == "STEP_CANCELLED" else "failed"
                 code = exc.code
+                if code == "RECONCILIATION_REQUIRED" or (
+                    export_started
+                    and code
+                    in {"STEP_TIMEOUT", "STEP_CANCELLED", "ACTION_OUTPUT_INVALID"}
+                ):
+                    state, code = "needs_reconciliation", "RECONCILIATION_REQUIRED"
             except asyncio.CancelledError:
                 state, code = "canceled", "STEP_CANCELLED"
+                if export_started:
+                    state, code = "needs_reconciliation", "RECONCILIATION_REQUIRED"
                 raise
             except Exception:
                 state, code = "failed", "STEP_EXECUTION_FAILED"
+                if export_started:
+                    state, code = "needs_reconciliation", "RECONCILIATION_REQUIRED"
             finally:
                 active.pop(step_id, None)
                 states[step_id] = state
@@ -308,9 +325,19 @@ class EndpointRuntime:
                 raise IntentError(
                     "RESOURCE_QUOTA_EXCEEDED", resource="inline workflow output"
                 )
-            self.journal.record(execution, state, output=selected)
+            if "needs_reconciliation" in states.values():
+                self.journal.record(
+                    execution, "needs_reconciliation", code="RECONCILIATION_REQUIRED"
+                )
+            else:
+                self.journal.record(execution, state, output=selected)
         except asyncio.CancelledError:
-            self.journal.record(execution, "canceled", code="STEP_CANCELLED")
+            if "needs_reconciliation" in states.values():
+                self.journal.record(
+                    execution, "needs_reconciliation", code="RECONCILIATION_REQUIRED"
+                )
+            else:
+                self.journal.record(execution, "canceled", code="STEP_CANCELLED")
             raise
         except IntentError as exc:
             self.journal.record(execution, "failed", code=exc.code)

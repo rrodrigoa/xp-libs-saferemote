@@ -260,7 +260,8 @@ def test_cancel_signals_running_worker_and_persists_terminal_state(tmp_path):
     asyncio.run(run())
 
 
-def test_abort_of_delivery_signals_worker_and_records_cancellation(tmp_path):
+@pytest.mark.parametrize("effect", [Effect.OBSERVE, Effect.DATA_EXPORT])
+def test_abort_of_delivery_signals_worker_and_records_cancellation(tmp_path, effect):
     _, controller, endpoint, _ = fixture(tmp_path / "abort.sqlite", 62)
     started = threading.Event()
     completed = threading.Event()
@@ -271,7 +272,8 @@ def test_abort_of_delivery_signals_worker_and_records_cancellation(tmp_path):
         completed.set()
         return Output(value=1)
 
-    register(controller.compiler.registry, observe)
+    endpoint.allow_data_export = True
+    register(controller.compiler.registry, observe, effect=effect)
     plan = controller.compile(
         "fixture-user",
         json.dumps(
@@ -299,7 +301,10 @@ def test_abort_of_delivery_signals_worker_and_records_cancellation(tmp_path):
     asyncio.run(run())
     assert completed.is_set()
     with endpoint.journal.connection() as db:
-        assert db.execute("SELECT status FROM executions").fetchone()[0] == "canceled"
+        expected = (
+            "needs_reconciliation" if effect == Effect.DATA_EXPORT else "canceled"
+        )
+        assert db.execute("SELECT status FROM executions").fetchone()[0] == expected
 
 
 def test_registry_rejects_open_or_coercive_models():
@@ -395,3 +400,61 @@ def test_endpoint_checks_time_again_before_step_invocation(tmp_path, tick, expec
     status = asyncio.run(controller.submit("fixture-user", plan, "expire"))
     assert status["steps"]["measure"]["code"] == expected
     assert calls == []
+
+
+@pytest.mark.parametrize(
+    ("enabled", "effect", "failure"),
+    [
+        (False, Effect.DATA_EXPORT, None),
+        (True, Effect.MUTATE, None),
+        (True, Effect.DATA_EXPORT, None),
+        (True, Effect.DATA_EXPORT, "RECONCILIATION_REQUIRED"),
+        (True, Effect.DATA_EXPORT, "STEP_TIMEOUT"),
+        (True, Effect.DATA_EXPORT, "unexpected"),
+    ],
+)
+def test_export_opt_in_keeps_mutation_denied_and_reports_uncertainty(
+    tmp_path, enabled, effect, failure
+):
+    _, controller, endpoint, calls = fixture(tmp_path / "export.sqlite", 83)
+    endpoint.allow_data_export = enabled
+
+    def run(context, args):
+        calls.append(context.step_id)
+        if failure == "unexpected":
+            raise ValueError("worker lost the receipt")
+        if failure:
+            raise IntentError(failure, action="demo.probe@1")
+        return Output(value=args.n)
+
+    register(controller.compiler.registry, run, effect=effect)
+    plan = controller.compile(
+        "fixture-user",
+        json.dumps(
+            {
+                "apiVersion": "remote.intent/v1",
+                "kind": "Workflow",
+                "metadata": {"name": "export"},
+                "spec": {
+                    "target": {"device_id": "fake-endpoint"},
+                    "steps": [
+                        {"id": "export", "uses": "demo.probe@1", "with": {"n": 1}},
+                    ],
+                },
+            }
+        ),
+    )
+    if not enabled or effect == Effect.MUTATE:
+        with pytest.raises(IntentError) as error:
+            asyncio.run(controller.submit("fixture-user", plan, "export"))
+        assert error.value.code == "SECURITY_DENIED"
+        assert calls == []
+        with endpoint.journal.connection() as db:
+            assert db.execute("SELECT count(*) FROM executions").fetchone()[0] == 0
+    else:
+        result = asyncio.run(controller.submit("fixture-user", plan, "export"))
+        assert calls == ["export"]
+        assert result["status"] == ("needs_reconciliation" if failure else "succeeded")
+        if failure:
+            assert result["code"] == "RECONCILIATION_REQUIRED"
+            assert result["steps"]["export"]["code"] == "RECONCILIATION_REQUIRED"

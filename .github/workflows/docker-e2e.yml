@@ -1,0 +1,51 @@
+name: Docker E2E
+on:
+  pull_request:
+  push:
+    branches: [main]
+permissions:
+  contents: read
+concurrency:
+  group: docker-e2e-${{ github.ref }}
+  cancel-in-progress: true
+jobs:
+  docker-e2e:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          persist-credentials: false
+          fetch-depth: 0
+      - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
+        with:
+          python-version: '3.12'
+      - run: python -m pip install -c requirements-lock.txt -e '.[dev,e2e,llm-eval]'
+      - run: python -m ruff check . && python -m ruff format --check . && python -m mypy src examples
+      - name: Unit and contract coverage
+        env:
+          COVERAGE_FILE: artifacts/coverage/.coverage.unit
+        run: |
+          mkdir -p artifacts/coverage
+          python -m coverage run -m pytest
+      - name: Run live container services
+        run: docker compose -f tests/e2e/docker-compose.yml --profile e2e up --build --abort-on-container-exit --exit-code-from e2e-runner
+      - name: Combine process coverage and enforce thresholds
+        env:
+          RIR_BASE_SHA: ${{ github.event.pull_request.base.sha || github.event.before }}
+        run: |
+          docker compose -f tests/e2e/docker-compose.yml --profile e2e cp endpoint:/reports/. artifacts/coverage/
+          python -m coverage combine --rcfile=tests/e2e/coverage-aggregate.ini artifacts/coverage
+          python -m coverage json --rcfile=tests/e2e/coverage-aggregate.ini -o artifacts/coverage.json
+          python -m coverage xml --rcfile=tests/e2e/coverage-aggregate.ini -o artifacts/coverage.xml
+          python scripts/check_docker_coverage.py artifacts/coverage.json
+          python scripts/check_diff_coverage.py artifacts/coverage.xml
+      - uses: actions/upload-artifact@ea165f8d65b6e75b540449e92b4886f43607fa02
+        with:
+          name: docker-e2e-coverage
+          path: |
+            artifacts/coverage.json
+            artifacts/coverage.xml
+      - name: Remove fixture volumes and credentials
+        if: always()
+        run: docker compose -f tests/e2e/docker-compose.yml --profile e2e down -v --remove-orphans

@@ -10,10 +10,11 @@ readme = "README.md"
 requires-python = ">=3.11"
 license = "MIT"
 license-files = ["LICENSE"]
-dependencies = ["pydantic>=2.12,<3", "PyYAML>=6.0.3,<7", "cryptography>=46,<51", "jsonschema>=4.26,<5"]
+dependencies = ["pydantic>=2.12,<3", "PyYAML>=6.0.3,<7", "cryptography>=46,<51", "jsonschema>=4.26,<5", "referencing>=0.37,<1"]
 
 [project.optional-dependencies]
 mcp = ["fastmcp>=4.1.6,<5"]
+e2e = ["xp-libs-saferemote[mcp]", "azure-storage-blob==12.28.0", "coverage==7.17.2"]
 llm-eval = ["xp-libs-saferemote[mcp]", "openai>=2,<4"]
 dev = ["build", "hatchling", "twine", "ruff", "mypy", "types-PyYAML", "types-jsonschema", "pytest", "pytest-cov", "hypothesis", "bandit", "pip-audit"]
 
@@ -31,7 +32,7 @@ include = [
     "/src", "/skills", "/tests", "/scripts", "/config", "/evals",
     "/examples/__init__.py", "/examples/demo.py", "/examples/sample_actions.py",
     "/examples/summarize.yaml", "/examples/forbidden_workflow.yaml",
-    "/docs/generated", "/docs/adr", "/docs/SDK.md", "/docs/GITHUB_SETUP.md",
+    "/docs/generated", "/docs/diagrams", "/docs/DOCKER_E2E_EXTERNAL_EXPORT.md", "/examples/action_packs", "/docs/adr", "/docs/SDK.md", "/docs/GITHUB_SETUP.md",
     "/docs/LOCAL_LLM_RUNBOOK.md",
     "/README.md", "/SECURITY.md", "/CHANGELOG.md", "/CONTRIBUTING.md",
     "/requirements-lock.txt", "/LICENSE", "/pyproject.toml",

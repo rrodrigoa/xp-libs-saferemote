@@ -3,6 +3,7 @@
 import hashlib
 import sys
 from importlib.resources import files
+from importlib.util import find_spec
 
 from remote_intent import ActionRegistry, WorkflowCompiler
 from remote_intent.errors import get_error_info
@@ -15,6 +16,7 @@ if expected:
     assert expected == actual
 assert get_error_info("ACTION_UNKNOWN")["retryable"] is False
 assert WorkflowCompiler(ActionRegistry(), "fake").registry.catalog("fake") == []
+assert find_spec("azure") is None
 
 if "--mcp" in sys.argv:
     import asyncio

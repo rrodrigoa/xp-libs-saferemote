@@ -8,6 +8,7 @@ permissions:
 jobs:
   fuzz:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
         with:
@@ -16,4 +17,4 @@ jobs:
         with:
           python-version: '3.12'
       - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval]'
-      - run: python -m pytest tests/property tests/security tests/recovery --hypothesis-seed=42
+      - run: python -m pytest tests/property tests/security tests/recovery --hypothesis-profile=security-fuzz

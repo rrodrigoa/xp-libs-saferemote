@@ -1,0 +1,23 @@
+apiVersion: remote.intent/v1
+kind: Workflow
+metadata:
+  name: investigate-and-export-evidence
+spec:
+  target:
+    device_id: e2e-endpoint-01
+  steps:
+    - id: collect
+      uses: test.evidence.collect@1
+      with:
+        fixture_id: diagnostic-sample-01
+        max_records: 100
+    - id: export
+      uses: test.evidence.upload_blob@1
+      with:
+        source: {ref: steps.collect.outputs.artifact}
+        destination: investigation-evidence
+  outputs:
+    evidence: {ref: steps.export.outputs.object_ref}
+    checksum: {ref: steps.export.outputs.content_sha256}
+    size: {ref: steps.export.outputs.size_bytes}
+    etag: {ref: steps.export.outputs.etag}

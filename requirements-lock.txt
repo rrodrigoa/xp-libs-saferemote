@@ -4,6 +4,8 @@ anyio==4.16.0
 ast_serialize==0.13.1
 attrs==26.1.0
 Authlib==1.9.5
+azure-core==1.41.0
+azure-storage-blob==12.28.0
 backports.tarfile==1.2.0
 bandit==1.9.4
 beartype==0.23.1
@@ -40,6 +42,7 @@ id==1.6.1
 idna==3.20
 importlib_metadata==10.1.0
 iniconfig==2.3.1
+isodate==0.7.2
 jaraco.classes==3.4.0
 jaraco.context==6.1.2
 jaraco.functools==4.6.0

@@ -1,0 +1,25 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 603" role="img" aria-labelledby="title desc">
+<title id="title">SafeRemote logical security flow</title><desc id="desc">Agent input crosses an identity boundary. Signed execution claims cross a second boundary. Validation and preview end before signing. A denial at admission prevents action invocation.</desc>
+<style>text{font-family:system-ui,sans-serif;fill:#152742}.label{font-size:17px;font-weight:700}.detail,.edge{font-size:13px}.edge{fill:#394e68}path{fill:none;stroke:#4c6384;stroke-width:2}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon points="0,0 10,5 0,10" fill="#4c6384"/></marker></defs>
+<rect width="1220" height="603" rx="16" fill="#f5f8fc"/>
+<path d="M1184 472H1202V86H313V99" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+<text x="36" y="41" font-size="26" font-weight="700">SafeRemote logical security flow</text>
+<text x="36" y="70" font-size="15">Agent input crosses an identity boundary. Signed execution claims cross a second boundary.</text>
+<path d="M589 137H631" marker-end="url(#arrow)"/>
+<path d="M907.5 174V191H907.5V211" marker-end="url(#arrow)"/><text class="edge" x="916.5" y="187">Verified identity</text>
+<path d="M589 249H631" marker-end="url(#arrow)"/>
+<path d="M907.5 286V303H312.5V323" marker-end="url(#arrow)"/><text class="edge" x="916.5" y="299">Authorized submission</text>
+<path d="M589 361H631" marker-end="url(#arrow)"/>
+<path d="M907.5 398V415H312.5V435" marker-end="url(#arrow)"/><text class="edge" x="916.5" y="411">Admitted execution</text>
+<path d="M589 473H631" marker-end="url(#arrow)"/>
+<rect x="36" y="99" width="553" height="75" rx="10" fill="#fff0cf" stroke="#7085a7"/><text x="52" y="127" class="label">Agent / MCP client</text><text x="52" y="152" class="detail">L1 · Credential + YAML tool request</text>
+<rect x="631" y="99" width="553" height="75" rx="10" fill="#e8f0fe" stroke="#7085a7"/><text x="647" y="127" class="label">FastMCP authentication</text><text x="647" y="152" class="detail">L2 · Verified principal + request</text>
+<rect x="36" y="211" width="553" height="75" rx="10" fill="#e8f0fe" stroke="#7085a7"/><text x="52" y="239" class="label">Publisher registry</text><text x="52" y="264" class="detail">L3 · Keys, schemas, versions, digests</text>
+<rect x="631" y="211" width="553" height="75" rx="10" fill="#e8f0fe" stroke="#7085a7"/><text x="647" y="239" class="label">Compile and authorize</text><text x="647" y="264" class="detail">L4 · Typed DAG  |  L5 · Policy + approval</text>
+<rect x="36" y="323" width="553" height="75" rx="10" fill="#e8f0fe" stroke="#7085a7"/><text x="52" y="351" class="label">Ed25519 signer</text><text x="52" y="376" class="detail">L6 · Canonical signed envelope</text>
+<rect x="631" y="323" width="553" height="75" rx="10" fill="#def3e8" stroke="#7085a7"/><text x="647" y="351" class="label">Endpoint admission</text><text x="647" y="376" class="detail">Signature · target · expiry · policy · replay</text>
+<rect x="36" y="435" width="553" height="75" rx="10" fill="#def3e8" stroke="#7085a7"/><text x="52" y="463" class="label">Installed Python callable</text><text x="52" y="488" class="detail">L7 · Typed inputs and results</text>
+<rect x="631" y="435" width="553" height="75" rx="10" fill="#def3e8" stroke="#7085a7"/><text x="647" y="463" class="label">Journal and result projection</text><text x="647" y="488" class="detail">L8 · Status, scoped results and cancellation</text>
+<text x="36" y="578" font-size="14">Validation and preview end before signing. A denial at admission prevents action invocation.</text>
+</svg>

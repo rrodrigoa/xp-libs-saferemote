@@ -84,7 +84,7 @@ def parse_yaml(source: str) -> dict[str, Any]:
             elif isinstance(event, (yaml.MappingEndEvent, yaml.SequenceEndEvent)):
                 depth -= 1
         root = yaml.compose(source, Loader=yaml.BaseLoader)
-    except (yaml.YAMLError, UnicodeError):
+    except (yaml.YAMLError, ValueError, OverflowError):
         raise IntentError("YAML_PARSE_FAILED") from None
     if not isinstance(root, MappingNode):
         raise IntentError("WORKFLOW_SCHEMA_INVALID")

@@ -197,3 +197,93 @@ def test_signed_envelope_size_gate(tmp_path):
         asyncio.run(endpoint.deliver(b"x" * 1_048_577))
     assert error.value.code == "RESOURCE_QUOTA_EXCEEDED"
     assert calls == []
+
+
+def test_conflicting_signed_replay_is_rejected_after_journal_reopen(tmp_path):
+    from remote_intent.journal import Journal
+
+    path = tmp_path / "replay.sqlite"
+    _, controller, endpoint, calls = fixture(path, 96)
+    actions = controller.catalog("fixture-user", "fake-endpoint")["actions"]
+    plan = controller.compile("fixture-user", json.dumps(document(*actions)))
+    now = int(controller.clock())
+    payload = ExecutionPlan(
+        execution_id="original",
+        nonce="nonce",
+        principal="fixture-user",
+        issued_at=now,
+        expires_at=now + 60,
+        policy_revision="fixture-v1",
+        resources=[],
+        plan=plan,
+    )
+    raw = controller.signer.sign(payload)
+
+    async def run():
+        original, replay = await asyncio.gather(
+            endpoint.deliver(raw), endpoint.deliver(raw)
+        )
+        assert original["execution_id"] == replay["execution_id"] == "original"
+        assert calls == ["measure", "summarize"]
+        endpoint.journal = Journal(path)
+        altered = payload.model_copy(update={"execution_id": "replacement"})
+        with pytest.raises(IntentError) as error:
+            await endpoint.deliver(controller.signer.sign(altered))
+        assert error.value.code == "PLAN_REPLAY_CONFLICT"
+        assert calls == ["measure", "summarize"]
+
+    asyncio.run(run())
+    with endpoint.journal.connection() as db:
+        assert db.execute("SELECT count(*) FROM executions").fetchone()[0] == 1
+
+
+@pytest.mark.parametrize(
+    "altered_claim", ["plan", "principal", "execution_id", "expires_at"]
+)
+def test_endpoint_rejects_receipt_reused_for_different_signed_claims(
+    tmp_path, altered_claim
+):
+    from remote_intent.policy import PolicyDecision, approval_binding
+
+    _, controller, endpoint, calls = fixture(
+        tmp_path / "receipt.sqlite", 97, Access.APPROVAL
+    )
+    actions = controller.catalog("fixture-user", "fake-endpoint")["actions"]
+    plan = controller.compile("fixture-user", json.dumps(document(*actions)))
+    now = int(controller.clock())
+    decision = PolicyDecision(Access.APPROVAL, "fixture-v1")
+    binding = approval_binding("fixture-user", plan, decision, "original", now + 60)
+
+    class Provider:
+        def verify(self, receipt, presented_binding, timestamp):
+            return receipt == "receipt" and presented_binding == binding
+
+    endpoint.approvals = Provider()
+    payload = ExecutionPlan(
+        execution_id="original",
+        nonce="nonce",
+        principal="fixture-user",
+        issued_at=now,
+        expires_at=now + 60,
+        policy_revision="fixture-v1",
+        resources=[],
+        plan=plan,
+        approval="receipt",
+    )
+    changes = {
+        "plan": controller.compile(
+            "fixture-user", json.dumps(document(*actions, arg=8))
+        ),
+        "principal": "another-user",
+        "execution_id": "another-execution",
+        "expires_at": now + 61,
+    }
+    raw = controller.signer.sign(
+        payload.model_copy(update={altered_claim: changes[altered_claim]})
+    )
+    with pytest.raises(IntentError) as error:
+        asyncio.run(endpoint.deliver(raw))
+    assert error.value.code == "APPROVAL_INVALID"
+    assert calls == []
+    with endpoint.journal.connection() as db:
+        assert db.execute("SELECT count(*) FROM executions").fetchone()[0] == 0
