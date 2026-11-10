@@ -20,7 +20,7 @@ jobs:
       - uses: actions/setup-python@6d4fd22b20465ccc0f7354476588e8df7c9ca0e0
         with:
           python-version: '3.12'
-      - run: python -m pip install -c requirements-lock.txt -e '.[dev,e2e]'
+      - run: python -m pip install -c requirements-lock.txt -e '.[dev,e2e,llm-eval]'
       - run: python -m ruff check . && python -m ruff format --check . && python -m mypy src examples
       - name: Unit and contract coverage
         env:
