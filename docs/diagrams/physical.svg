@@ -1,0 +1,17 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1220 491" role="img" aria-labelledby="title desc">
+<title id="title">SafeRemote Docker fixture and physical interfaces</title><desc id="desc">Each service has a separate container. The bootstrap generates disposable credentials before services start. Separate image build installs code. The runner downloads over HTTPS using a separately issued read SAS.</desc>
+<style>text{font-family:system-ui,sans-serif;fill:#152742}.label{font-size:17px;font-weight:700}.detail,.edge{font-size:13px}.edge{fill:#394e68}path{fill:none;stroke:#4c6384;stroke-width:2}</style>
+<defs><marker id="arrow" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto"><polygon points="0,0 10,5 0,10" fill="#4c6384"/></marker></defs>
+<rect width="1220" height="491" rx="16" fill="#f5f8fc"/>
+<path d="M36 137H18V361H36" stroke-dasharray="5 4" marker-end="url(#arrow)"/>
+<text x="36" y="41" font-size="26" font-weight="700">SafeRemote Docker fixture and physical interfaces</text>
+<text x="36" y="70" font-size="15">Each service has a separate container. The bootstrap generates disposable credentials before services start.</text>
+<path d="M589 137H631" marker-end="url(#arrow)"/>
+<path d="M907.5 174V191H610V211" marker-end="url(#arrow)"/><text class="edge" x="916.5" y="187">mTLS · signed envelope + separate write grant</text>
+<path d="M610 286V303H610V323" marker-end="url(#arrow)"/><text class="edge" x="619" y="299">HTTPS · exact-blob write SAS</text>
+<rect x="36" y="99" width="553" height="75" rx="10" fill="#fff0cf" stroke="#7085a7"/><text x="52" y="127" class="label">Runner container</text><text x="52" y="152" class="detail">P1 · FastMCP HTTPS client</text>
+<rect x="631" y="99" width="553" height="75" rx="10" fill="#e8f0fe" stroke="#7085a7"/><text x="647" y="127" class="label">Control-plane container</text><text x="647" y="152" class="detail">MCP · controller · signer · SAS issuer</text>
+<rect x="36" y="211" width="1148" height="75" rx="10" fill="#def3e8" stroke="#7085a7"/><text x="52" y="239" class="label">Endpoint container</text><text x="52" y="264" class="detail">P2 · mTLS delivery · public key · SQLite</text>
+<rect x="36" y="323" width="1148" height="75" rx="10" fill="#f1e6fa" stroke="#7085a7"/><text x="52" y="351" class="label">Azurite container</text><text x="52" y="376" class="detail">P3 · Endpoint writes directly  |  P4 · Runner reads directly</text>
+<text x="36" y="466" font-size="14">Separate image build installs code. The runner downloads over HTTPS using a separately issued read SAS.</text>
+</svg>

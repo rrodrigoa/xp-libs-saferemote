@@ -11,6 +11,7 @@ REQUIRED = {
     "codeql",
     "docs-skill",
     "compatibility-gate",
+    "docker-e2e",
 }
 
 

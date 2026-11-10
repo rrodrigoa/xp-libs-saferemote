@@ -134,3 +134,10 @@ Automate scenario tests for: target-specific dynamic action discovery; correct m
 Every PR runs scripted agent/MCP regression scenarios: discovery, published schema mapping, deliberately invalid YAML/field, canonical error and `get_error_info`, correction, fake endpoint submission and evidence-grounded report, plus security refusal with zero side effects. Optional local real-model evaluation uses any OpenAI-compatible backend with structured tool calling, including GPT-OSS 120B if hosted compatibly. It is explicitly opt-in, uses no hardcoded endpoint settings and **never** runs in public GitHub CI. See `docs/LLM_EVALUATION.md` and `evals/agent_skill/scenarios.yaml`.
 
 For validation errors, retry only a changed **unsubmitted** workflow, within at most three repair cycles. For denial, signature failures and `RECONCILIATION_REQUIRED`, stop and report status rather than trying another action, privilege, machine or token.
+
+For external export, discover a registered action and inspect its effect and
+destination inputs. Use only an advertised destination alias and pass artifact
+handles using typed output references. Validate and preview before submission.
+After success, use the deployment's authorized result-access interface if
+available. Keep bearer credentials out of YAML, logs and user-facing replies.
+On policy or credential denial, stop and request the appropriate authorization.

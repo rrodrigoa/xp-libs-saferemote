@@ -1,7 +1,8 @@
 # GitHub and PyPI setup
 
 Protect main and require reviews with CODEOWNERS. Require CI release-safety,
-Security dependency-audit and CodeQL, and Docs docs-skill. Configure a tag
+Security dependency-audit and CodeQL, Docs docs-skill, and Docker E2E
+docker-e2e. Configure a tag
 ruleset that restricts creation and movement of version tags to maintainers.
 
 Create environments named `testpypi` and `pypi`, restricting both to protected

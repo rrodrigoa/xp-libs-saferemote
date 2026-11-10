@@ -57,3 +57,11 @@ inline results only when the deployer supplies a projection function.
 The in-memory artifact scope stores bounded data for one execution. A handle
 is unguessable and checked against its stored digest and scope. The storage
 lifetime ends with the execution. The SDK has no artifact export adapter.
+
+Deployments can explicitly enable the `data_export` effect with
+`EndpointRuntime(allow_data_export=True)`. Admission and step policy still
+apply. The publisher's registered callable owns the destination integration,
+and a trusted worker can supply a short-lived grant via `ActionContext.services`.
+An uncertain export is journaled for reconciliation. See the
+[Docker fixture](DOCKER_E2E_EXTERNAL_EXPORT.md) for the separate delivery and
+read-access paths.

@@ -20,6 +20,7 @@ _R = TypeVar("_R")
 
 class Effect(StrEnum):
     OBSERVE = "observe"
+    DATA_EXPORT = "data_export"
     MUTATE = "mutate"
 
 
