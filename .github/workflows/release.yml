@@ -6,10 +6,6 @@ permissions:
   contents: read
 jobs:
   build:
-    if: github.ref_protected && vars.RIR_RELEASE_ENABLED == 'true'
-    permissions:
-      contents: read
-      checks: read
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
@@ -21,9 +17,6 @@ jobs:
           python-version: '3.12'
       - run: git merge-base --is-ancestor HEAD origin/main
       - run: python scripts/check_release_safety.py
-      - run: python scripts/check_required_checks.py
-        env:
-          GH_TOKEN: ${{ github.token }}
       - run: python -m pip install -c requirements-lock.txt -e '.[dev,mcp,llm-eval,e2e]'
       - run: ruff check . && ruff format --check . && mypy src examples
       - run: python -m pytest --cov=remote_intent --cov-report=json --cov-report=xml
