@@ -21,7 +21,7 @@ class CollectLogsOutput(BaseModel):
 
 
 @action(
-    key="acme.logs.collect",
+    key="example.logs.collect",
     version="1.0.0",
     description="Collect bounded log records",
     input_model=CollectLogsInput,
@@ -52,7 +52,7 @@ class SummarizeLogsOutput(BaseModel):
 
 
 @action(
-    key="acme.logs.summarize",
+    key="example.logs.summarize",
     version="1.0.0",
     description="Summarize a log artifact, using any developer-chosen implementation",
     input_model=SummarizeLogsInput,

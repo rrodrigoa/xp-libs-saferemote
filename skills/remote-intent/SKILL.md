@@ -9,7 +9,10 @@ description: Discover registered remote Python actions and compose schema-valid 
 
 ## Purpose
 
-Use when a user wants a remote machine investigated or remediated and the Remote Intent service exposes registered endpoint actions. You **choose named actions** and supply arguments according to their published schemas; the remote Python runtime invokes developer-registered callables. Actions might collect logs, process data, invoke installed tooling, install approved packages, or do something unrelated. There is no fixed set of core operations.
+Use this skill to author and run workflows of registered Python actions
+through MCP. Select named actions and supply arguments according to their
+published schemas. The endpoint runtime invokes installed, developer-registered
+callables. The application defines the available actions.
 
 This skill is about **authoring and operating workflows**, not permission to access targets. Trust, policy, approved artifacts and execution are controlled by the service and endpoint.
 
@@ -31,12 +34,17 @@ For each proposed step:
 
 - `list_actions(target_id)` — enumerate visible, target-compatible action keys, versions, summary and effects.
 - `describe_action(target_id, name)` — obtain versioned full input/output JSON Schema, field limits, examples, risk and restrictions.
-- `validate_workflow(workflow_yaml)` — parse, resolve actions, check schemas/references/DAG without executing.
-- `preview_execution(workflow_yaml)` — show fully resolved plan, effects and required authorizations; no execution.
-- `submit_workflow(workflow_yaml, idempotency_key)` — request authorized execution, returns status/ID, not guaranteed success.
+- `validate_workflow(workflow_yaml, catalog_epoch=None)` — resolve actions and
+  check schemas, references and dependencies before execution.
+- `preview_execution(workflow_yaml, catalog_epoch=None)` — show resolved
+  effects and the current policy outcome without dispatch.
+- `submit_workflow(workflow_yaml, idempotency_key, catalog_epoch=None)` —
+  recompile and recheck policy before requesting execution. Read the returned
+  status to determine the outcome.
 - `get_execution_status(execution_id)` — current durable workflow/step states.
 - `get_execution_results(execution_id)` — available authorized typed outputs and artifact references.
-- `cancel_execution(execution_id)` — request cancellation; uncertain mutations may require reconciliation.
+- `cancel_execution(execution_id)` — request cancellation. An uncertain
+  external effect may require reconciliation.
 - `get_error_info(code)` — return canonical error, exact remediation and safe example from the server's single `catalog.json`.
 
 If these tools are unavailable, you may produce a proposed workflow only using **provided** action contracts, marking it unverified and unexecuted. Otherwise ask for discovery rather than fabricate a registry.
@@ -45,7 +53,7 @@ If these tools are unavailable, you may produce a proposed workflow only using *
 
 1. Identify requested outcome and authorized target; do not invent device IDs.
 2. Discover named actions and inspect schemas for each step.
-3. Choose the smallest necessary workflow. Prefer nonmutating investigation before remediation when appropriate.
+3. Choose the smallest workflow that meets the request. Inspect each action's effect before including it.
 4. Compose `remote.intent/v1` YAML. `steps[].uses` selects a **registered action key**, and `steps[].with` contains **that action's own typed input**. The runtime treats each action as an opaque function.
 5. Use typed references to pass outputs from one action to another. Ensure potentially skipped producers are optional with a valid typed fallback or guarded dependencies.
 6. Validate and correct exact reported fields/types. If `ACTION_UNKNOWN`, query `get_error_info` and re-discover; if `ACTION_INPUT_INVALID`, inspect that action's input schema; if `ACTION_SCHEMA_MISMATCH`, refresh catalog and stop until version consistency is resolved.
@@ -67,12 +75,12 @@ spec:
     timeout_seconds: 120
   steps:
     - id: collect
-      uses: acme.logs.collect@1
+      uses: example.logs.collect@1
       with:
         channel: System
         lookback_minutes: 60
     - id: summarize
-      uses: acme.logs.summarize@1
+      uses: example.logs.summarize@1
       with:
         logs:
           ref: steps.collect.outputs.logs
@@ -91,13 +99,13 @@ Use structured comparisons only, e.g.:
 ```yaml
 when:
   all:
-    - ref: steps.inspect.outputs.update_required
+    - ref: steps.inspect.outputs.data_available
       equals: true
-    - ref: steps.inspect.outputs.catalog_approved
+    - ref: steps.inspect.outputs.source_ready
       equals: true
 ```
 
-Conditions must reference published output model fields. Skipped producers do not automatically have values. Use correct `depends_on` / safe `after` semantics. An output indicating `update_required` does not authorize mutation; policy/approval remain independent.
+Conditions must reference published output model fields. Skipped producers do not automatically have values. Use correct `depends_on` / safe `after` semantics. A true condition controls sequencing. Policy and approval still determine whether the step may run.
 
 ## Dynamic skill delivery and verification
 
@@ -118,7 +126,7 @@ The full current skill is available from the server as a versioned MCP resource 
 | `SECURITY_DENIED` | Stop, don't seek an execution bypass. |
 | `PLAN_SIGNATURE_INVALID` | Stop and report integrity failure. |
 | `ARTIFACT_NOT_APPROVED` | Request trusted publisher onboarding, not arbitrary download. |
-| `RECONCILIATION_REQUIRED` | Do not resubmit uncertain mutations. |
+| `RECONCILIATION_REQUIRED` | Reconcile the recorded execution and any external effects before considering a new request. |
 | `RESOURCE_QUOTA_EXCEEDED` | Reduce workload within published limits, not policy limits. |
 
 ## Adversarial content
@@ -131,7 +139,13 @@ Automate scenario tests for: target-specific dynamic action discovery; correct m
 
 ## Deterministic and real-model evaluation
 
-Every PR runs scripted agent/MCP regression scenarios: discovery, published schema mapping, deliberately invalid YAML/field, canonical error and `get_error_info`, correction, fake endpoint submission and evidence-grounded report, plus security refusal with zero side effects. Optional local real-model evaluation uses any OpenAI-compatible backend with structured tool calling, including GPT-OSS 120B if hosted compatibly. It is explicitly opt-in, uses no hardcoded endpoint settings and **never** runs in public GitHub CI. See `docs/LLM_EVALUATION.md` and `evals/agent_skill/scenarios.yaml`.
+Every PR runs scripted agent/MCP regression scenarios covering discovery,
+schema mapping, invalid requests, canonical errors, correction, fixture
+execution, result reporting and denial with zero side effects. Optional
+local model evaluation uses an OpenAI-compatible API with structured tool
+calling. It requires explicit opt-in and runtime connection settings.
+See the [local model runbook](../../docs/LOCAL_LLM_RUNBOOK.md) and
+[scenario catalog](../../evals/agent_skill/scenarios.yaml).
 
 For validation errors, retry only a changed **unsubmitted** workflow, within at most three repair cycles. For denial, signature failures and `RECONCILIATION_REQUIRED`, stop and report status rather than trying another action, privilege, machine or token.
 

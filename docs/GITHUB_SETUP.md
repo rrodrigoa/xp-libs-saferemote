@@ -10,8 +10,11 @@ Register a Trusted Publisher on each package index with the following settings.
 
 | Index | GitHub repository | Workflow filename | Environment |
 | --- | --- | --- | --- |
-| TestPyPI | `rrodrigoa/xp-libs-saferemote` | `release.yml` | `testpypi` |
-| PyPI | `rrodrigoa/xp-libs-saferemote` | `release.yml` | `pypi` |
+| TestPyPI | Owner and name of the publishing repository | `release.yml` | `testpypi` |
+| PyPI | Owner and name of the publishing repository | `release.yml` | `pypi` |
+
+Use the repository that runs the release workflow. Trusted Publishing
+matches that repository, workflow filename and environment exactly.
 
 Push a version tag matching `pyproject.toml` on a commit reachable from
 `origin/main`. For version `0.1.0`, use `v0.1.0`. The release workflow runs

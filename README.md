@@ -26,8 +26,8 @@ the endpoint process's OS identity.
 
 The controller owns the private signing key. The endpoint owns the trusted
 public keys, installed registry and SQLite journal. The signature authenticates
-the execution claims. The delivery channel provides confidentiality and can be
-implemented using an existing enterprise transport. Action installation,
+the execution claims. A deployment supplies a confidential, authenticated
+delivery channel through the transport interface. Action installation,
 execution requests and data retrieval are separate interfaces.
 
 ## Docker end-to-end example
@@ -68,12 +68,12 @@ a summary. See [the registration](examples/sample_actions.py) and
 ## Integrate the SDK
 
 1. Register trusted Python functions with `@action` and `ActionRegistry.install`.
-   Supply a content digest from your verified deployment process.
+   Supply a content digest verified by the action deployment process.
 2. Configure an inventory target, controller signing key, endpoint trust store
    and independent policy adapters. With default policy, execution is denied.
 3. Use `WorkflowCompiler` to validate and inspect a workflow. Use `Controller`
    for admission and `EndpointRuntime` to verify deliveries and execute through
-   a trusted worker. Implement `TransportAdapter` around your delivery service.
+   a trusted worker. Implement `TransportAdapter` for the selected delivery service.
 4. Install the `mcp` extra and use `remote_intent.mcp.create_server` with the
    host's authentication callback. Agents discover actions and read their
    current schemas before constructing YAML.

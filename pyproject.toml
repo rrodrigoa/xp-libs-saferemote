@@ -33,7 +33,7 @@ include = [
     "/examples/__init__.py", "/examples/demo.py", "/examples/sample_actions.py",
     "/examples/summarize.yaml", "/examples/forbidden_workflow.yaml",
     "/docs/generated", "/docs/diagrams", "/docs/DOCKER_E2E_EXTERNAL_EXPORT.md", "/examples/action_packs", "/docs/adr", "/docs/SDK.md", "/docs/GITHUB_SETUP.md",
-    "/docs/LOCAL_LLM_RUNBOOK.md",
+    "/docs/END_TO_END_SECURITY_WALKTHROUGH.md", "/docs/LOCAL_LLM_RUNBOOK.md", "/docs/VALIDATION.md",
     "/README.md", "/SECURITY.md", "/CHANGELOG.md", "/CONTRIBUTING.md",
     "/requirements-lock.txt", "/LICENSE", "/pyproject.toml",
 ]

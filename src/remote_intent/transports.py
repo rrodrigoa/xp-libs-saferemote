@@ -1,4 +1,4 @@
-"""Typed adapter for existing enterprise transport."""
+"""Typed delivery and execution-query interfaces for deployment adapters."""
 
 from typing import Any, Protocol
 

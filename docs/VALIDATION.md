@@ -1,9 +1,8 @@
-# Local validation
+# Initial 0.1.0 local validation
 
-This report covers the staged SafeRemote 0.1.0 implementation. The staged
-changes include the SDK and MCP adapter under `src/`, the test suites,
-example consumer actions, generated contracts, release scripts, packaging
-metadata, GitHub workflows and contributor documentation.
+This report records the initial local validation of SafeRemote 0.1.0
+before release. The counts, coverage and artifact hashes below describe
+that local run.
 
 ## Tests and checks
 
@@ -43,7 +42,7 @@ broker was exercised.
 | Endpoint runtime | 95.92% | 95.00% |
 | Signed plan verification | 100% | 100% |
 
-The staged diff covered 1,149 of 1,167 changed executable lines (98.46%).
+The implementation diff covered 1,149 of 1,167 changed executable lines (98.46%).
 All measured coverage gates passed.
 
 ## Local artifacts
@@ -53,16 +52,14 @@ All measured coverage gates passed.
 | xp_libs_saferemote-0.1.0-py3-none-any.whl | `f468dc33683ee04c9aa49061eb2a205b932b4f306c0213cc1d908f2a147bb946` |
 | xp_libs_saferemote-0.1.0.tar.gz | `e8c4669b906e3017be419f11438a04a2d8564d33b9d6134e79ff792ce0b203e7` |
 
-## Release status
+## Scope of the local run
 
 Live model evaluation, the full hosted compatibility matrix, CodeQL and
 other hosted scans, mutation testing, a privileged broker review, TestPyPI
 and PyPI publication and index verification were **NOT RUN**. No model
 configuration was supplied at runtime.
 
-Remaining implementation includes production worker isolation, a reviewed
-privilege broker and mutation reconciliation, durable controller submissions,
-automatic trusted-pack onboarding, artifact delivery and export, and complete
-live-model scenario scoring. See the [endpoint isolation ADR](adr/0001-endpoint-isolation.md).
-GitHub protection rules, publication environments and the PyPI trusted
-publisher registrations require [maintainer setup](GITHUB_SETUP.md).
+For current integration boundaries, see the [SDK contracts](SDK.md), the
+[endpoint isolation ADR](adr/0001-endpoint-isolation.md), and the
+[registered data export ADR](adr/0002-data-export.md). Publication
+configuration is documented in [GitHub and PyPI setup](GITHUB_SETUP.md).
